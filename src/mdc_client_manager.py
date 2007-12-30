@@ -1,6 +1,6 @@
 import asyncore, socket
 
-class mdc_manager(asyncore.dispatcher):
+class MdcClientManager(asyncore.dispatcher):
 
     def __init__(self, host):
         asyncore.dispatcher.__init__(self)

@@ -1,5 +1,5 @@
 
-import struct, http_client, control_receiver, asyncore
+import struct, mdc_client_manager, mdc_receiver, asyncore
 
 
 #mdcmessage = struct.pack("3sb4s", "MDC", 0, "LIST")
@@ -12,15 +12,20 @@ import struct, http_client, control_receiver, asyncore
 
 #print (mdcmessage)
 
-c = http_client.mdc_manager('192.168.0.30')
+c = mdc_client_manager.MdcClientManager('192.168.0.30')
 
 c.send_list("undi")
 
 #c.send_sinf("5bccec356d2b9ca4685ba415d0706f44")
 
-listener = control_receiver.mdc_control_receiver()
+control_listener = mdc_receiver.MdcControlReceiver()
 
-listener.start()
+control_listener.start()
+
+data_listener = mdc_receiver.MdcDataReceiver()
+
+data_listener.start()
+
 
 asyncore.loop()
 

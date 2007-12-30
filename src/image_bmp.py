@@ -4,7 +4,7 @@ class ImageBmp:
     
     def __init__(self): pass
         
-    def create(self, width, height, trans_r, trans_g, trans_b):
+    def create(self, width, height, trans_r=0, trans_g=0, trans_b=0):
         self.header_size = 54
         self.width= width
         self.height = height
@@ -26,20 +26,10 @@ class ImageBmp:
         median_img = ImageBmp()
         median_img.create(self.width, self.height)
         
-        for x in range(1, self.width-1):
-            med_r = (self.get_pixel(x-1,0)[0]+self.get_pixel(x,1)[0]+self.get_pixel(x+1,0)[0])/3
-            med_g = (self.get_pixel(x-1,0)[1]+self.get_pixel(x,1)[1]+self.get_pixel(x+1,0)[1])/3
-            med_b = (self.get_pixel(x-1,0)[2]+self.get_pixel(x,1)[2]+self.get_pixel(x+1,0)[2])/3
-            median_img.set_pixel(x, 0, med_r, med_g, med_b)
-            
-            med_r = (self.get_pixel(x-1,self.height-1)[0]+self.get_pixel(x,self.height-2)[0]+self.get_pixel(x+1,self.height-1)[0])/3
-            med_g = (self.get_pixel(x-1,self.height-1)[1]+self.get_pixel(x,self.height-2)[1]+self.get_pixel(x+1,self.height-1)[1])/3
-            med_b = (self.get_pixel(x-1,self.height-1)[2]+self.get_pixel(x,self.height-2)[2]+self.get_pixel(x+1,self.height-1)[2])/3
-            median_img.set_pixel(x, self.height-1, med_r, med_g, med_b)    
-        
-        for x in range(1, self.width-1):
-            for y in range(1, self.height-1):    
-                med_r, med_g, med_b = self._calc_full_median(x, y)
+
+        for x in range(0, self.width):
+            for y in range(0, self.height):    
+                med_r, med_g, med_b = self._calc_full_median(x, y, True)
                 median_img.set_pixel(x, y, med_r, med_g, med_b)
         
         return median_img
@@ -48,10 +38,10 @@ class ImageBmp:
         final_img = ImageBmp()
         final_img.create(self.width, self.height)
         
-        for x in range(1, self.width-1):
-            for y in range(1, self.height-1):    
+        for x in range(0, self.width):
+            for y in range(0, self.height):    
                 if self.get_pixel(x, y)[0] == trans_r and self.get_pixel(x, y)[1] == trans_g and self.get_pixel(x, y)[2] == trans_b:
-                    med_r, med_g, med_b = self._calc_full_median(x, y)
+                    med_r, med_g, med_b = self._calc_full_median(x, y, False)
                     final_img.set_pixel(x, y, med_r, med_g, med_b)
                 else:
                     final_img.set_pixel(x, y, self.get_pixel(x, y)[0], self.get_pixel(x, y)[1], self.get_pixel(x, y)[2])
@@ -87,19 +77,72 @@ class ImageBmp:
         f.write(final_file)
         file.close(f)
 
-    def _calc_full_median(self, x, y):
-        up_right = self.get_pixel(x + 1, y - 1)
-        up_center = self.get_pixel(x, y - 1)
-        up_left = self.get_pixel(x - 1, y - 1)
-        center_right = self.get_pixel(x + 1, y)
-        center_center = self.get_pixel(x, y)
-        center_left = self.get_pixel(x - 1, y)
-        down_right = self.get_pixel(x + 1, y + 1)
-        down_center = self.get_pixel(x, y + 1)
-        down_left = self.get_pixel(x - 1, y + 1)
-        med_r = (up_right[0] + up_left[0] + up_center[0] + center_left[0] + center_center[0] + center_right[0] + down_left[0] + down_center[0] + down_right[0]) / 9
-        med_g = (up_right[1] + up_left[1] + up_center[1] + center_left[1] + center_center[1] + center_right[1] + down_left[1] + down_center[1] + down_right[1]) / 9
-        med_b = (up_right[2] + up_left[2] + up_center[2] + center_left[2] + center_center[2] + center_right[2] + down_left[2] + down_center[2] + down_right[2]) / 9
+    def _calc_full_median(self, x, y, use_curr_pixel):
+        count_med = 0
+        med_r = 0
+        med_g = 0
+        med_b = 0
+        if use_curr_pixel == True:
+            center_center = self.get_pixel(x, y)
+            med_r += center_center[0]
+            med_g += center_center[1]
+            med_b += center_center[2]
+            count_med+=1
+        if y > 0:
+            up_center = self.get_pixel(x, y - 1)
+            med_r += up_center[0]
+            med_g += up_center[1]
+            med_b += up_center[2]
+            count_med+=1
+            if x > 0:
+                up_left = self.get_pixel(x - 1, y - 1)
+                med_r += up_left[0]
+                med_g += up_left[1]
+                med_b += up_left[2]
+                count_med+=1
+            
+            if x < self.width-1:
+                up_right = self.get_pixel(x + 1, y - 1)
+                med_r += up_right[0]
+                med_g += up_right[1]
+                med_b += up_right[2]
+                count_med+=1
+            
+        if y < self.height-1:
+            down_center = self.get_pixel(x, y + 1)
+            med_r += down_center[0]
+            med_g += down_center[1]
+            med_b += down_center[2]
+            count_med+=1
+            if x > 0:
+                down_left = self.get_pixel(x - 1, y + 1)
+                med_r += down_left[0]
+                med_g += down_left[1]
+                med_b += down_left[2]
+                count_med+=1
+            if x < self.width-1:
+                down_right = self.get_pixel(x + 1, y + 1)
+                med_r += down_right[0]
+                med_g += down_right[1]
+                med_b += down_right[2]
+                count_med+=1
+        if x > 0:
+            center_left = self.get_pixel(x - 1, y)
+            med_r += center_left[0]
+            med_g += center_left[1]
+            med_b += center_left[2]
+            count_med+=1
+        if x < self.width -1:
+            center_right = self.get_pixel(x + 1, y)
+            med_r += center_right[0]
+            med_g += center_right[1]
+            med_b += center_right[2]
+            count_med+=1
+        
+        
+        med_r = med_r/count_med
+        med_g = med_g/count_med
+        med_b = med_b/count_med
         return med_r, med_g, med_b
 
 
@@ -107,7 +150,7 @@ class ImageBmp:
 
 def test_imagebmp(save_path):
     pippo = ImageBmp()
-    pippo.create(33, 33)
+    pippo.create(33, 33,0,0,0)
     for i in range(0, 33):
         for k in range(0, 33):
             pippo.set_pixel(i * 2, k * 2, 255, 255, 255)
@@ -122,4 +165,4 @@ def test_imagebmp(save_path):
     
     pappo.save(save_path)
 
-
+test_imagebmp("/home/giuppe/pytest.bmp")
