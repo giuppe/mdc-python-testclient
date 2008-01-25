@@ -1,5 +1,6 @@
 
 import struct, mdc_client_manager, mdc_receiver, asyncore
+from image_repo import ImageRepo
 
 
 #mdcmessage = struct.pack("3sb4s", "MDC", 0, "LIST")
@@ -14,15 +15,19 @@ import struct, mdc_client_manager, mdc_receiver, asyncore
 
 c = mdc_client_manager.MdcClientManager('192.168.0.30')
 
-c.send_list("undi")
+#c.send_list("capo")
 
-#c.send_sinf("5bccec356d2b9ca4685ba415d0706f44")
+#c.send_sinf("5e9f88e7ed612d6129b771d7e2d49bd0")
+
+c.send_sreq("5e9f88e7ed612d6129b771d7e2d49bd0", 0, 0, 20)
 
 control_listener = mdc_receiver.MdcControlReceiver()
 
 control_listener.start()
 
-data_listener = mdc_receiver.MdcDataReceiver()
+image_repo = ImageRepo()
+
+data_listener = mdc_receiver.MdcDataReceiver(image_repo)
 
 data_listener.start()
 

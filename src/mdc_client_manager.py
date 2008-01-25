@@ -25,13 +25,13 @@ class MdcClientManager(asyncore.dispatcher):
         self.buffer = self.buffer[sent:]
 
     def send_list(self, name):
-        self.buffer = 'MDC\0LISTn=%s;\0' % name
+        self.buffer += 'MDC\0LISTn=%s;\0' % name
         
     def send_sinf(self, stream_id):
-        self.buffer = 'MDC\0SINFh=%s;\0' % stream_id
+        self.buffer += 'MDC\0SINFh=%s;\0' % stream_id
         
     def send_sreq(self, stream_id, description, du_start, du_end):
-        self.buffer = 'MDC\0SREQh=%s;f=%s;sb=%s;se=%s;\0' % stream_id, description, du_start, du_end
+        self.buffer += "MDC\0SREQh=%s;f=%d;sb=%d;se=%d;\0" % (stream_id, description, du_start, du_end) 
 
 #class mdc_control_receiver(UDPServer):
 #    def __init__(self):
