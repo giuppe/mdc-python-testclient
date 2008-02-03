@@ -52,6 +52,7 @@ class ImageRepo:
     def save_bmp(self, stream_id, path):
         if(stream_id in self.images):
             image_to_save = self.images[stream_id].subst_transparent()
+#            image_to_save = self.images[stream_id]
             image_to_save.save(path)
         else:
             print "No image with stream_id=%s present." % stream_id
