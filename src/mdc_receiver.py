@@ -1,5 +1,7 @@
 import SocketServer, threading
 import struct
+from image_repository import ImageRepo
+import globals
 
 class MdcMessageHandler(SocketServer.DatagramRequestHandler):
     def handle(self):
@@ -7,11 +9,28 @@ class MdcMessageHandler(SocketServer.DatagramRequestHandler):
         version = self.request[0][3]
         type = self.request[0][4:8]  
         print "Peer %s sent message %s of type %s" % (self.client_address[0], header, type)
-        print "%s" % self.request[0][8:]
-        if type != "ALST":
+        #print "%s" % self.request[0][8:]
+        if type == "ALST":
+            return
+        
+        if type == "ASNF":
+            stream_id = ""
+            flows_number = 0
+            sequences = 0
             for key, value in self.split_parameters(str(self.request[0][8:])).iteritems():
-                print key, value
-                #print param["h"]
+                if(key=="h"):
+                    stream_id = value
+                if(key=="fn"):
+                    flows_number = int(value)
+                if(key=="dn"):
+                    sequences = int(value)
+            global image_repo
+            globals.image_repo.set_flows_number(stream_id, flows_number)
+                    
+        
+        for key, value in self.split_parameters(str(self.request[0][8:])).iteritems():
+            print key, value
+            #print param["h"]
         
     def split_parameters(self, parameters):
         result_array = {}
@@ -37,11 +56,9 @@ class MdcControlReceiver(threading.Thread, SocketServer.UDPServer):
             
 
 class MdcDataReceiver(threading.Thread, SocketServer.UDPServer):
-    def __init__(self, image_repo):
+    def __init__(self):
         threading.Thread.__init__(self)
-        desc_handle = DescriptorHandler
-#        desc_handle.set_image_repo(desc_handle, image_repo)
-        SocketServer.UDPServer.__init__(self, ('',5552), desc_handle)
+        SocketServer.UDPServer.__init__(self, ('',5552), DescriptorHandler)
         
     def run(self):
         print "Starting data listening on port 5552"
@@ -49,8 +66,7 @@ class MdcDataReceiver(threading.Thread, SocketServer.UDPServer):
             self.serve_forever()
 
 class DescriptorHandler(SocketServer.DatagramRequestHandler):
-    def set_image_repo(self, image_repo):
-        self.img_repo = image_repo
+
         
     def handle(self):
         header = self.request[0][0:2]
@@ -62,6 +78,7 @@ class DescriptorHandler(SocketServer.DatagramRequestHandler):
         
         stream_id = descriptor[0:32]
         flow_id, sequence_id = struct.unpack(">bI", descriptor[32:37])
+       
         codec_type, codec_param_size = struct.unpack(">bI", descriptor[37:42])
         
         #sequence_id = descriptor[33:37]
@@ -73,7 +90,7 @@ class DescriptorHandler(SocketServer.DatagramRequestHandler):
             return
         
         print "Codec type 'image', param size %s" % codec_param_size
-        height, width, bpp = struct.unpack(">HHb", descriptor[42:47])
+        width, height, bpp = struct.unpack(">HHb", descriptor[42:47])
         if(bpp != 24):
             print "Images with bpp != 24 are not supported"
             return
@@ -81,6 +98,15 @@ class DescriptorHandler(SocketServer.DatagramRequestHandler):
         print "Image size: %s*%s*%s" % (width, height, bpp)
         
         payload_size = struct.unpack(">H", descriptor[47:49])
+        
+        global image_repo
+        
+        if(not globals.image_repo.is_init(stream_id)):
+            globals.image_repo.set_size(stream_id, width, height)
+            
+        
+        payload_ends = 49 + int(payload_size[0])
+        globals.image_repo.add_descriptor(stream_id, flow_id, sequence_id, descriptor[49:payload_ends])
         
         
         

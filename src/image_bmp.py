@@ -2,17 +2,29 @@ import struct
 
 class ImageBmp:
     
-    def __init__(self): pass
+    def __init__(self):
+        self.width = 0
+        self.height = 0
         
-    def create(self, width, height, trans_r=0, trans_g=0, trans_b=0):
+        #default transparent color: bright green
+        self.trans_r = 0
+        self.trans_g = 255
+        self.trans_b = 0
+        
+        
+    def create(self, width, height, trans_r=0, trans_g=255, trans_b=0):
         self.header_size = 54
         self.width= width
         self.height = height
         self.img_size = width*height*3
-        self._pixels=[(trans_r,trans_g,trans_b)]
+        self.trans_r = trans_r
+        self.trans_g = trans_g
+        self.trans_b = trans_b
+        
+        self._pixels=[(self.trans_r,self.trans_g,self.trans_b)]
         
         for i in range(self.img_size-1):
-            self._pixels.append((trans_r,trans_g,trans_b))
+            self._pixels.append((self.trans_r,self.trans_g,self.trans_b))
 
     def set_pixel(self, x, y, r, g, b):
         self._pixels[x+(self.height-y-1)*self.width]=(r,g,b)
@@ -20,6 +32,14 @@ class ImageBmp:
     def get_pixel(self, x, y):
         return self._pixels[x+(self.height-y-1)*self.width]
 
+    def is_transparent(self, pixel):
+        if self.trans_r != pixel[0]:
+            return False
+        if self.trans_g != pixel[1]:
+            return False
+        if self.trans_b != pixel[2]:
+            return False
+        return True
 
     def median(self):
     
@@ -34,13 +54,14 @@ class ImageBmp:
         
         return median_img
 
-    def subst_transparent(self, trans_r, trans_g, trans_b):
+    def subst_transparent(self):
         final_img = ImageBmp()
         final_img.create(self.width, self.height)
         
         for x in range(0, self.width):
-            for y in range(0, self.height):    
-                if self.get_pixel(x, y)[0] == trans_r and self.get_pixel(x, y)[1] == trans_g and self.get_pixel(x, y)[2] == trans_b:
+            for y in range(0, self.height):
+                   
+                if self.is_transparent(self.get_pixel(x, y)):
                     med_r, med_g, med_b = self._calc_full_median(x, y, False)
                     final_img.set_pixel(x, y, med_r, med_g, med_b)
                 else:
@@ -90,54 +111,62 @@ class ImageBmp:
             count_med+=1
         if y > 0:
             up_center = self.get_pixel(x, y - 1)
-            med_r += up_center[0]
-            med_g += up_center[1]
-            med_b += up_center[2]
-            count_med+=1
+            if not self.is_transparent(up_center):
+                med_r += up_center[0]
+                med_g += up_center[1]
+                med_b += up_center[2]
+                count_med+=1
             if x > 0:
                 up_left = self.get_pixel(x - 1, y - 1)
-                med_r += up_left[0]
-                med_g += up_left[1]
-                med_b += up_left[2]
-                count_med+=1
+                if not self.is_transparent(up_left):
+                    med_r += up_left[0]
+                    med_g += up_left[1]
+                    med_b += up_left[2]
+                    count_med+=1
             
             if x < self.width-1:
                 up_right = self.get_pixel(x + 1, y - 1)
-                med_r += up_right[0]
-                med_g += up_right[1]
-                med_b += up_right[2]
-                count_med+=1
+                if not self.is_transparent(up_right):
+                    med_r += up_right[0]
+                    med_g += up_right[1]
+                    med_b += up_right[2]
+                    count_med+=1
             
         if y < self.height-1:
             down_center = self.get_pixel(x, y + 1)
-            med_r += down_center[0]
-            med_g += down_center[1]
-            med_b += down_center[2]
-            count_med+=1
+            if not self.is_transparent(down_center):
+                med_r += down_center[0]
+                med_g += down_center[1]
+                med_b += down_center[2]
+                count_med+=1
             if x > 0:
                 down_left = self.get_pixel(x - 1, y + 1)
-                med_r += down_left[0]
-                med_g += down_left[1]
-                med_b += down_left[2]
-                count_med+=1
+                if not self.is_transparent(down_left):
+                    med_r += down_left[0]
+                    med_g += down_left[1]
+                    med_b += down_left[2]
+                    count_med+=1
             if x < self.width-1:
                 down_right = self.get_pixel(x + 1, y + 1)
-                med_r += down_right[0]
-                med_g += down_right[1]
-                med_b += down_right[2]
-                count_med+=1
+                if not self.is_transparent(down_right):
+                    med_r += down_right[0]
+                    med_g += down_right[1]
+                    med_b += down_right[2]
+                    count_med+=1
         if x > 0:
             center_left = self.get_pixel(x - 1, y)
-            med_r += center_left[0]
-            med_g += center_left[1]
-            med_b += center_left[2]
-            count_med+=1
+            if not self.is_transparent(center_left):
+                med_r += center_left[0]
+                med_g += center_left[1]
+                med_b += center_left[2]
+                count_med+=1
         if x < self.width -1:
             center_right = self.get_pixel(x + 1, y)
-            med_r += center_right[0]
-            med_g += center_right[1]
-            med_b += center_right[2]
-            count_med+=1
+            if not self.is_transparent(center_right):
+                med_r += center_right[0]
+                med_g += center_right[1]
+                med_b += center_right[2]
+                count_med+=1
         
         
         med_r = med_r/count_med
@@ -165,4 +194,4 @@ def test_imagebmp(save_path):
     
     pappo.save(save_path)
 
-test_imagebmp("/home/giuppe/pytest.bmp")
+#test_imagebmp("/home/giuppe/pytest.bmp")
