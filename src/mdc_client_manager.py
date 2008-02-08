@@ -1,4 +1,4 @@
-import asyncore, socket
+import socket
 
 #class MdcClientManager(asyncore.dispatcher):
 #
