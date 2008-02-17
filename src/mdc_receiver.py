@@ -51,14 +51,24 @@ class MdcMessageHandler(SocketServer.DatagramRequestHandler):
             return
         
         if type == "SINF":
-            #TODO: first extract parameters
+            stream_id=""
             
-            #TODO: second retrieve information on the stream
+            # first extract parameter
+            for key, value in self.split_parameters(str(self.request[0][8:])).iteritems():
+                if(key == "h"):
+                    stream_id = value
+                
+                    
+            #second retrieve information on the stream
+            descriptions_number, sequence_number = globals.g_stream_name_cache.get_info(stream_id)
             
-            #TODO: finally send ASNF message with these info
+            #finally send ASNF message with these info
             
-            print "ERROR: We still cannot handle SINF messages"
+            peer_connection = globals.g_peers_cache.get_control_connection(self.client_address[0])
             
+            peer_connection.send_asnf(stream_id, descriptions_number, sequence_number)
+            
+            return
 
         if type == "ASNF":
             stream_id = ""
@@ -82,16 +92,40 @@ class MdcMessageHandler(SocketServer.DatagramRequestHandler):
 
         
         if type == "SREQ":
-            #TODO: first extract parameters
+            stream_id = ""
+            description_id = 0
+            sequence_start = 0
+            sequence_end = 0
+            #first extract parameters
+            for key, value in self.split_parameters(str(self.request[0][8:])).iteritems():
+                if(key=="h"):
+                    stream_id = value
+                if(key=="fn"):
+                    description_id = int(value)
+                if(key=="sb"):
+                    sequence_begin = int(value)
+                if(key=="se"):
+                    sequence_end = int(value)
             
-            #TODO: second, check for descriptors presence
+            #check for descriptors presence
             
-            #TODO: third, send an ASRQ with descriptors we have
+            real_seq_begin, real_seq_end = globals.g_sequences_cache.get_descriptors_index(stream_id, description_id, sequence_begin, sequence_end)
             
-            #TODO: finally, schedule for sending those descriptors 
+            #third, send an ASRQ with descriptors we have
+            
+            peer_connection = globals.g_peers_cache.get_control_connection(self.client_address[0])
+            
+            peer_connection.send_asrq(stream_id, description_id, real_seq_start, real_seq_end)
+            
+            #finally, schedule for sending those descriptors 
+            
+            if(real_seq_end != 0):
+                data_connection = globals.g_peers_cache.get_data_connection(self.client_address[0])
+                data_connection.send_desc(stream_id, description_id, real_seq_start, real_seq_end)
             
             print "ERROR: We still cannot handle SREQ messages";
-
+            return
+        
         if type == "ASRQ":
             print "Received ASRQ: expecting descriptors..."
             return            
@@ -103,10 +137,20 @@ class MdcMessageHandler(SocketServer.DatagramRequestHandler):
             peer_connection = globals.g_peers_cache.get_control_connection(self.client_address[0])
             
             peer_connection.send_aper(peers_list)
+            return
         
         if type == "APER":
-            #TODO: update peer list
-            print "ERROR: We still cannot handle APER messages";
+                        
+            for single_parameters in self.split_multiple_parameters(str(self.request[0][9:])).iteritems():
+                
+                for key, value in self.split_parameters(single_parameters).iteritems():
+                    if(key=="a"):
+                        address = value
+                    if(key=="p"):
+                        port = value
+                globals.g_peers_cache.add(address, port)
+                
+            return
             
         
 

@@ -16,3 +16,10 @@ class SequencesCache:
         
     def get_stream_ids(self):
         return self.stream_ids
+    
+    
+    def get_descriptors_index(self, stream_id, description_id, sequence_start, sequence_end):
+        #TODO should find descriptors we have
+        
+        print "ERROR: Missing function get_descriptors_index in SequencesCache"
+        return (0, 0)

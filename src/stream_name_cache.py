@@ -13,5 +13,8 @@ class StreamNameCache:
     
     def clear(self):
         self.name_cache.clear()
+        
+    def get_info(self, stream_id):
+        return (self.desc[stream_id], self.seq[stream_id])
     
     

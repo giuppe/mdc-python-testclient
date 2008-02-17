@@ -13,7 +13,7 @@ class ImageRepo:
     def add_descriptor(self, stream_id, flow_id, seq_id, payload):
         if(stream_id in self.images):
             curr_image = self.images[stream_id] 
-            #TODO: add pixels to image
+            
             print "Adding received pixels"
             if seq_id <= 1:
                 self.max_payload[stream_id] = len(payload)
