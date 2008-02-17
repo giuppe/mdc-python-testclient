@@ -17,19 +17,6 @@ class MdcMessageHandler(SocketServer.DatagramRequestHandler):
         type = self.request[0][4:8]  
         print "Peer %s sent message %s of type %s" % (self.client_address[0], header, type)
         #print "%s" % self.request[0][8:]
-        if type == "ALST":
-            globals.g_stream_name_last_search.clear()
-            for single_parameters in self.split_multiple_parameters(str(self.request[0][9:])).iteritems():
-                
-                for key, value in self.split_parameters(single_parameters).iteritems():
-                    if(key=="n"):
-                        searched_stream_name = value
-                    if(key=="h"):
-                        stream_id = value
-                globals.g_stream_name_cache.add_name(stream_id, searched_stream_name)
-                globals.g_last_stream_name_search.add_name(stream_id, searched_stream_name)        
-                
-            return
         
         if type == "LIST":
             searched_stream_name = ""
@@ -48,18 +35,31 @@ class MdcMessageHandler(SocketServer.DatagramRequestHandler):
             peer_connection.send_alst(streams_list)
             time.sleep(2)
             return
+        
+        if type == "ALST":
+            globals.g_stream_name_last_search.clear()
+            for single_parameters in self.split_multiple_parameters(str(self.request[0][9:])).iteritems():
                 
-        if type == "ASRQ":
+                for key, value in self.split_parameters(single_parameters).iteritems():
+                    if(key=="n"):
+                        searched_stream_name = value
+                    if(key=="h"):
+                        stream_id = value
+                globals.g_stream_name_cache.add_name(stream_id, searched_stream_name)
+                globals.g_last_stream_name_search.add_name(stream_id, searched_stream_name)        
+                
             return
         
-        if type == "PEER":
+        if type == "SINF":
+            #TODO: first extract parameters
             
-            peers_list = globals.g_peers_cache.get_peers()
+            #TODO: second retrieve information on the stream
             
-            peer_connection = globals.g_peers_cache.get_control_connection(self.client_address[0])
+            #TODO: finally send ASNF message with these info
             
-            peer_connection.send_aper(peers_list)
-        
+            print "ERROR: We still cannot handle SINF messages"
+            
+
         if type == "ASNF":
             stream_id = ""
             flows_number = 0
@@ -79,6 +79,37 @@ class MdcMessageHandler(SocketServer.DatagramRequestHandler):
             globals.g_stream_name_cache.add_info(stream_id, flows_number, sequences)
             
             return
+
+        
+        if type == "SREQ":
+            #TODO: first extract parameters
+            
+            #TODO: second, check for descriptors presence
+            
+            #TODO: third, send an ASRQ with descriptors we have
+            
+            #TODO: finally, schedule for sending those descriptors 
+            
+            print "ERROR: We still cannot handle SREQ messages";
+
+        if type == "ASRQ":
+            print "Received ASRQ: expecting descriptors..."
+            return            
+        
+        if type == "PEER":
+            
+            peers_list = globals.g_peers_cache.get_peers()
+            
+            peer_connection = globals.g_peers_cache.get_control_connection(self.client_address[0])
+            
+            peer_connection.send_aper(peers_list)
+        
+        if type == "APER":
+            #TODO: update peer list
+            print "ERROR: We still cannot handle APER messages";
+            
+        
+
         
                     
         
