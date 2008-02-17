@@ -1,6 +1,6 @@
 
-import pickle
-import socket
+
+import socket, struct, time
 import threading
 
 
@@ -17,9 +17,13 @@ class MdcClientManager ( threading.Thread ):
         
         while(1):
             # Send some messages:
+            time.sleep(1)
             if(len(self.buffer) !=0):
                 sent = self.client.send ( self.buffer )
                 self.buffer = self.buffer[sent:]
+                
+        
+                
         
     def close(self):
         # Close the connection
@@ -46,14 +50,17 @@ class MdcClientManager ( threading.Thread ):
 
     def send_aper(self, peer_list):
         self.buffer += 'MDC\0APER'
-        self.buffer += '%d' % len(peer_list)
+        self.buffer += struct.pack('>I', len(peer_list))
         if len(peer_list) != 0:
             for peer in peer_list:
                 self.buffer += 'a=%s;p=%d\0' % peer[0], peer[1]
 
     def send_alst(self, stream_list):
         self.buffer += 'MDC\0ALST'
-        self.buffer += '%d' % len(stream_list)
+        self.buffer += struct.pack('>I', len(stream_list))
+        print "Preparing ALST: found %d entries" % len(stream_list)
         if len(stream_list) != 0:
             for stream in stream_list:
-                self.buffer += 'n=%s;h=%s\0' % peer[0], peer[1]
+                print "Preparing ALST: %s, %s" % stream[0], stream[1]
+                self.buffer += 'n=%s;h=%s\0' % stream[0], stream[1]
+        print "Sent ALST message"

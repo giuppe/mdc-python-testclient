@@ -1,17 +1,64 @@
 import SocketServer, threading
-import struct
+import struct, time
 from image_repository import ImageRepo
 import globals
+from mdc_client_manager import MdcClientManager
+
+    
 
 class MdcMessageHandler(SocketServer.DatagramRequestHandler):
     def handle(self):
+        global g_sequences_cache
+        global g_peers_cache
+        global g_stream_name_cache
+        global g_last_stream_name_search
         header = self.request[0][0:3]
         version = self.request[0][3]
         type = self.request[0][4:8]  
         print "Peer %s sent message %s of type %s" % (self.client_address[0], header, type)
         #print "%s" % self.request[0][8:]
         if type == "ALST":
+            globals.g_stream_name_last_search.clear()
+            for single_parameters in self.split_multiple_parameters(str(self.request[0][9:])).iteritems():
+                
+                for key, value in self.split_parameters(single_parameters).iteritems():
+                    if(key=="n"):
+                        searched_stream_name = value
+                    if(key=="h"):
+                        stream_id = value
+                globals.g_stream_name_cache.add_name(stream_id, searched_stream_name)
+                globals.g_last_stream_name_search.add_name(stream_id, searched_stream_name)        
+                
             return
+        
+        if type == "LIST":
+            searched_stream_name = ""
+            for key, value in self.split_parameters(str(self.request[0][8:])).iteritems():
+                if(key == "n"):
+                    searched_stream_name = value
+            
+            streams_list = list()
+            for stream_i_have in globals.g_sequences_cache.get_stream_ids():
+                stream_name_i_have = globals.g_stream_name_cache.get(stream_i_have)
+                if(stream_name_i_have.find(searched_stream_name) != -1):
+                    streams_list.append((stream_name_i_have, stream_i_have))
+                
+            peer_connection = globals.g_peers_cache.get_control_connection(self.client_address[0])
+            
+            peer_connection.send_alst(streams_list)
+            time.sleep(2)
+            return
+                
+        if type == "ASRQ":
+            return
+        
+        if type == "PEER":
+            
+            peers_list = globals.g_peers_cache.get_peers()
+            
+            peer_connection = globals.g_peers_cache.get_control_connection(self.client_address[0])
+            
+            peer_connection.send_aper(peers_list)
         
         if type == "ASNF":
             stream_id = ""
@@ -26,6 +73,13 @@ class MdcMessageHandler(SocketServer.DatagramRequestHandler):
                     sequences = int(value)
             global image_repo
             globals.image_repo.set_flows_number(stream_id, flows_number)
+            
+            global g_stream_name_cache
+            
+            globals.g_stream_name_cache.add_info(stream_id, flows_number, sequences)
+            
+            return
+        
                     
         
         for key, value in self.split_parameters(str(self.request[0][8:])).iteritems():
@@ -41,7 +95,10 @@ class MdcMessageHandler(SocketServer.DatagramRequestHandler):
                 result_array[parameter[0]] = parameter[1]
             
         return result_array
-        
+    
+    def split_multiple_parameters(self, multi_parameters):
+        return multi_parameters.split("\0");
+         
            
 
 class MdcControlReceiver(threading.Thread, SocketServer.UDPServer):
