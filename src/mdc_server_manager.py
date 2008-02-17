@@ -31,7 +31,6 @@ class MdcServerManager ( threading.Thread ):
                 self.buffer += globals.g_sequences_cache.get_descriptor(curr_desc[0], curr_desc[1], curr_desc[2])  
         
     def close(self):
-        # Close the connection
         self.client.close()
         
     def send_desc(self, stream_id, description_id, seq_start, seq_end):
