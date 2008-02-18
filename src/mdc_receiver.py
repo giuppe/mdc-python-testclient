@@ -122,8 +122,7 @@ class MdcMessageHandler(SocketServer.DatagramRequestHandler):
             if(real_seq_end != 0):
                 data_connection = globals.g_peers_cache.get_data_connection(self.client_address[0])
                 data_connection.send_desc(stream_id, description_id, real_seq_start, real_seq_end)
-            
-            print "ERROR: We still cannot handle SREQ messages";
+
             return
         
         if type == "ASRQ":
