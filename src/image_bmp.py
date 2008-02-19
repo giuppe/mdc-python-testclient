@@ -168,10 +168,14 @@ class ImageBmp:
                 med_b += center_right[2]
                 count_med+=1
         
-        
-        med_r = med_r/count_med
-        med_g = med_g/count_med
-        med_b = med_b/count_med
+        if count_med == 0:
+            med_r = 0
+            med_g = 0
+            med_b = 0
+        else:
+            med_r = med_r/count_med
+            med_g = med_g/count_med
+            med_b = med_b/count_med
         return med_r, med_g, med_b
 
 

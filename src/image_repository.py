@@ -49,10 +49,14 @@ class ImageRepo:
     def set_flows_number(self, stream_id, flows_number):
         self.flows_number[stream_id] = flows_number
     
-    def save_bmp(self, stream_id, path):
+    def save_bmp(self, stream_id, path, interpolate=True):
         if(stream_id in self.images):
-            image_to_save = self.images[stream_id].subst_transparent()
-#            image_to_save = self.images[stream_id]
+            if interpolate == True:
+                image_to_save = self.images[stream_id].subst_transparent()
+                
+            else:
+                image_to_save = self.images[stream_id]
+            
             image_to_save.save(path)
         else:
             print "No image with stream_id=%s present." % stream_id

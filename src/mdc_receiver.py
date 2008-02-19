@@ -37,16 +37,21 @@ class MdcMessageHandler(SocketServer.DatagramRequestHandler):
             return
         
         if type == "ALST":
-            globals.g_stream_name_last_search.clear()
-            for single_parameters in self.split_multiple_parameters(str(self.request[0][9:])).iteritems():
+            globals.g_last_stream_name_search.clear()
+            for i in self.request[0][12:]:
+                print "%c" % i
+            stream_id=""
+            searched_stream_name = ""
+            for single_parameters in self.split_multiple_parameters(str(self.request[0][12:])):
                 
                 for key, value in self.split_parameters(single_parameters).iteritems():
                     if(key=="n"):
                         searched_stream_name = value
                     if(key=="h"):
                         stream_id = value
-                globals.g_stream_name_cache.add_name(stream_id, searched_stream_name)
-                globals.g_last_stream_name_search.add_name(stream_id, searched_stream_name)        
+                if stream_id != "" and searched_stream_name != "":
+                    globals.g_stream_name_cache.add_name(stream_id, searched_stream_name)
+                    globals.g_last_stream_name_search.add_name(stream_id, searched_stream_name)        
                 
             return
         
@@ -140,7 +145,7 @@ class MdcMessageHandler(SocketServer.DatagramRequestHandler):
         
         if type == "APER":
                         
-            for single_parameters in self.split_multiple_parameters(str(self.request[0][9:])).iteritems():
+            for single_parameters in self.split_multiple_parameters(str(self.request[0][12:])):
                 
                 for key, value in self.split_parameters(single_parameters).iteritems():
                     if(key=="a"):

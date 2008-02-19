@@ -6,6 +6,12 @@ class StreamNameCache:
     
     def add_name(self, stream_id, stream_name):
         self.name_cache[stream_id] = stream_name
+        
+    def get_names(self):
+        result = list()
+        for stream_id, stream_name in self.name_cache.iteritems():
+            result.append((stream_id, stream_name))
+        return result
     
     def add_info(self, stream_id, descriptions, sequences):
         self.desc[stream_id] =descriptions
