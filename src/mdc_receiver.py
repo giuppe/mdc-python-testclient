@@ -1,12 +1,52 @@
-import SocketServer, threading
+import SocketServer, threading, socket
 import struct, time
 from image_repository import ImageRepo
 import globals
 from mdc_client_manager import MdcClientManager
 
-    
+class MdcReceiver:
+    def __init__(self, port, class_handler):
+        
+        
+        self.server = socket.socket ( socket.AF_INET, socket.SOCK_DGRAM )
+        self.server.bind((socket.gethostname(), port))
+        #become a server socket
+        #self.server.listen(5)
+        self.class_handler=class_handler
 
-class MdcMessageHandler(SocketServer.DatagramRequestHandler):
+        
+    def serve_forever ( self ):
+        handler = self.class_handler()
+        addr=0
+        
+        while(1):
+            # Send some messages:
+            time.sleep(1)
+            #if(len(self.buffer) !=0):
+            data,addr = self.server.recvfrom( 65565 )
+            handler.request[0]=data
+            handler.client_address[0]=addr
+            handler.handle()
+            #self.buffer = self.buffer[sent:]
+                
+        
+                
+        
+    def close(self):
+        # Close the connection
+        self.client.close()
+
+class MdcRequestHandler:
+    def __init__(self):
+        self.request=[[]]
+        self.request[0]=""
+        self.client_address=[[]]
+        self.client_address[0]=""
+        
+    def handle(self):
+        pass
+
+class MdcMessageHandler(MdcRequestHandler):
     def handle(self):
         global g_sequences_cache
         global g_peers_cache
@@ -180,10 +220,10 @@ class MdcMessageHandler(SocketServer.DatagramRequestHandler):
          
            
 
-class MdcControlReceiver(threading.Thread, SocketServer.UDPServer):
+class MdcControlReceiver(threading.Thread, MdcReceiver):
     def __init__(self):
         threading.Thread.__init__(self)
-        SocketServer.UDPServer.__init__(self, ('',5551), MdcMessageHandler)
+        MdcReceiver.__init__(self, 5551, MdcMessageHandler)
         
     def run(self):
         print "Starting control listening on port 5551"
@@ -191,17 +231,17 @@ class MdcControlReceiver(threading.Thread, SocketServer.UDPServer):
             self.serve_forever()
             
 
-class MdcDataReceiver(threading.Thread, SocketServer.UDPServer):
+class MdcDataReceiver(threading.Thread, MdcReceiver):
     def __init__(self):
         threading.Thread.__init__(self)
-        SocketServer.UDPServer.__init__(self, ('',5552), DescriptorHandler)
+        MdcReceiver.__init__(self, 5552, DescriptorHandler)
         
     def run(self):
         print "Starting data listening on port 5552"
         while True:
             self.serve_forever()
 
-class DescriptorHandler(SocketServer.DatagramRequestHandler):
+class DescriptorHandler(MdcRequestHandler):
 
         
     def handle(self):
